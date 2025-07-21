@@ -35,24 +35,22 @@
       vr-mode-ui="enabled: false"
       renderer="logarithmicDepthBuffer: true; precision: medium;"
       embedded
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-    >
-     <a-nft
-      type="nft"
-      url="./aframe/examples/image-tracking/nft/trex/trex-image/trex"
-      smooth="true"
-      smoothCount="30"
-      smoothTolerance="0.005"
-      smoothThreshold="2"
-    >
-      <a-entity
-        gltf-model="./trex/Bee.glb"
-        scale="5 5 5"
-        rotation="90 0 0"
-        position="0 0 0"
-        animation-mixer>
-      </a-entity>
-    </a-nft>
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+      <a-nft
+        type="nft"
+        url="./aframe/examples/image-tracking/nft/trex/trex-image/trex"
+        smooth="true"
+        smoothCount="20"
+        smoothTolerance="0.01"
+        smoothThreshold="3">
+        <a-entity
+          gltf-model="./trex/Bee.glb"
+          scale="5 5 5"
+          rotation="-90 0 0"
+          position="150 300 -100"
+          animation-mixer>
+        </a-entity>
+      </a-nft>
       <a-entity camera></a-entity>
     </a-scene>
 </body>
