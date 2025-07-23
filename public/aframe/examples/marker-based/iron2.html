@@ -24,14 +24,12 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <!-- VIDEO: debe estar en formato mp4 y tener autoplay, loop, muted -->
         <video id="myVideo" src="../assets/video.mp4" autoplay loop muted playsinline crossorigin="anonymous"></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- Video flotando frente al marcador -->
         <a-video src="#myVideo" width="1.2" height="0.7" position="0 0 0" rotation="0 0 0"></a-video>
       </a-entity>
       
