@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
+  </head>
+
+  <body style="margin: 0; overflow: hidden">
+    <a-scene embedded arjs>
+      
+      <!-- Cámara AR -->
+      <a-marker type="pattern" url="../assets/pattern-ironman.patt">
+        <!-- Mostrar video en plano -->
+        <a-video 
+          src="#vid" 
+          width="2" 
+          height="1.125" 
+          position="0 0 0"
+          rotation="-90 0 0">
+        </a-video>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+
+      <!-- Video en assets -->
+      <a-assets>
+        <video id="vid" src="../assets/video.mp4" autoplay loop muted playsinline crossorigin="anonymous"></video>
+      </a-assets>
+    </a-scene>
+  </body>
+</html>
