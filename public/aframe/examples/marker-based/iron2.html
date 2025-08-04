@@ -107,7 +107,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     <script>
       AFRAME.registerComponent("video-handler", {
         init: function () {
-          const video = document.querySelector("#myVideo");
+           const video = this.data.target;
 
           const unlock = () => {
             video.play().then(() => {
