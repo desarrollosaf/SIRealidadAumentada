@@ -106,8 +106,11 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
     <script>
       AFRAME.registerComponent("video-handler", {
+        schema: {
+          target: { type: "selector" }
+        },
         init: function () {
-           const video = this.data.target;
+          const video = this.data.target;
 
           const unlock = () => {
             video.play().then(() => {
@@ -117,11 +120,11 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
           };
           window.addEventListener("touchstart", unlock, { once: true });
 
-          this.el.sceneEl.addEventListener("targetFound", () => {
+          this.el.addEventListener("targetFound", () => {
             video.play();
           });
 
-          this.el.sceneEl.addEventListener("targetLost", () => {
+          this.el.addEventListener("targetLost", () => {
             video.pause();
           });
         }
@@ -147,16 +150,14 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
         <a-video src="#video1" width="1.2" height="0.7" position="0 0 0"></a-video>
       </a-entity>
 
-      
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video2">
         <a-video src="#video2" width="1.2" height="0.7" position="0 0 0"></a-video>
       </a-entity>
 
-      
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
         <a-video src="#video3" width="1.2" height="0.7" position="0 0 0"></a-video>
       </a-entity>
-      
+
     </a-scene>
   </body>
 </html>
