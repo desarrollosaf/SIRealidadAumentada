@@ -129,6 +129,32 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
           });
         }
       });
+
+      AFRAME.registerComponent('responsive-video', {
+        init: function () {
+          const videoEl = this.el;
+          const aspect = 16 / 9; // relación del video
+
+          const resize = () => {
+            const screenRatio = window.innerWidth / window.innerHeight;
+            let width, height;
+
+            if (screenRatio > aspect) {
+              height = 1.5; // fijo
+              width = height * aspect;
+            } else {
+              width = 2.5; // fijo
+              height = width / aspect;
+            }
+
+            videoEl.setAttribute('width', width);
+            videoEl.setAttribute('height', height);
+          };
+
+          window.addEventListener('resize', resize);
+          resize();
+        }
+      });
     </script>
   </head>
   <body>
@@ -147,15 +173,15 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video1">
-        <a-video src="#video1" width="1.2" height="0.7" position="0 0 0"></a-video>
+        <a-video src="#video1" responsive-video position="0 0 0"></a-video>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video2">
-        <a-video src="#video2" width="1.2" height="0.7" position="0 0 0"></a-video>
+        <a-video src="#video2" responsive-video position="0 0 0"></a-video>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-video src="#video3" width="1.2" height="0.7" position="0 0 0"></a-video>
+        <a-video src="#video3" responsive-video position="0 0 0"></a-video>
       </a-entity>
 
     </a-scene>
