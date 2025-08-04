@@ -104,7 +104,9 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+
     <script>
+     
       AFRAME.registerComponent("video-handler", {
         schema: {
           target: { type: "selector" }
@@ -114,7 +116,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
           const unlock = () => {
             video.play().then(() => {
-              video.pause(); 
+              video.pause();
             }).catch(e => console.log("Error al desbloquear video:", e));
             window.removeEventListener("touchstart", unlock);
           };
@@ -130,40 +132,41 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
         }
       });
 
-      AFRAME.registerComponent('responsive-video', {
+      AFRAME.registerComponent("responsive-video", {
         init: function () {
           const videoEl = this.el;
-          const aspect = 16 / 9; // relación del video
+          const aspect = 16 / 9; 
 
           const resize = () => {
             const screenRatio = window.innerWidth / window.innerHeight;
             let width, height;
 
             if (screenRatio > aspect) {
-              height = 1.5; // fijo
+              height = 1.8;
               width = height * aspect;
             } else {
-              width = 2.5; // fijo
+              width = 3.2;
               height = width / aspect;
             }
 
-            videoEl.setAttribute('width', width);
-            videoEl.setAttribute('height', height);
+            videoEl.setAttribute("width", width);
+            videoEl.setAttribute("height", height);
           };
 
-          window.addEventListener('resize', resize);
+          window.addEventListener("resize", resize);
           resize();
         }
       });
     </script>
   </head>
+
   <body>
-    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targets3.mind;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" 
+    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targets3.mind;"
+             color-space="sRGB"
+             renderer="colorManagement: true, physicallyCorrectLights"
+             vr-mode-ui="enabled: false"
              device-orientation-permission-ui="enabled: false">
-      
+
       <a-assets>
         <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
         <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
@@ -172,16 +175,19 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
+     
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video1">
-        <a-video src="#video1" responsive-video position="0 0 0"></a-video>
+        <a-video src="#video1" position="0 0 0" rotation="0 0 0" responsive-video></a-video>
       </a-entity>
 
+      
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video2">
-        <a-video src="#video2" responsive-video position="0 0 0"></a-video>
+        <a-video src="#video2" position="0 0 0" rotation="0 0 0" responsive-video></a-video>
       </a-entity>
 
+      
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-video src="#video3" responsive-video position="0 0 0"></a-video>
+        <a-video src="#video3" position="0 0 0" rotation="0 0 0" responsive-video></a-video>
       </a-entity>
 
     </a-scene>
