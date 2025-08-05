@@ -133,29 +133,29 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       });
 
       AFRAME.registerComponent("responsive-video", {
-        init: function () {
-          const videoEl = this.el;
-          const aspect = 16 / 9; 
+          init: function () {
+            const videoEl = this.el;
+            const aspect = 9 / 16;
 
-          const resize = () => {
-            const screenRatio = window.innerWidth / window.innerHeight;
-            let width, height;
+            const resize = () => {
+              const screenRatio = window.innerWidth / window.innerHeight;
+              let width, height;
 
-            if (screenRatio > aspect) {
-              height = 2.8;
-              width = height * aspect;
-            } else {
-              width = 4.2;
-              height = width / aspect;
-            }
+              if (screenRatio < aspect) {
+                width = 1.2;
+                height = width / aspect;
+              } else {
+                height = 2.5;
+                width = height * aspect;
+              }
 
-            videoEl.setAttribute("width", width);
-            videoEl.setAttribute("height", height);
-          };
+              videoEl.setAttribute("width", width);
+              videoEl.setAttribute("height", height);
+            };
 
-          window.addEventListener("resize", resize);
-          resize();
-        }
+            window.addEventListener("resize", resize);
+            resize();
+          }
       });
     </script>
   </head>
