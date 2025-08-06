@@ -1,74 +1,98 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+    </style>
   </head>
   <body>
     <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsc.mind;"
              color-space="sRGB"
              renderer="colorManagement: true, physicallyCorrectLights"
              vr-mode-ui="enabled: false"
-             device-orientation-permission-ui="enabled: false">
-
+             device-orientation-permission-ui="enabled: false"
+             embedded
+             loading-screen="enabled: false">
+      
+      <!-- Videos en memoria -->
       <a-assets>
-        <video id="video1" loop muted playsinline preload="auto" crossorigin="anonymous"
-               src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4"></video>
-        <video id="video2" loop muted playsinline preload="auto" crossorigin="anonymous"
-               src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4"></video>
-        <video id="video3" loop muted playsinline preload="auto" crossorigin="anonymous"
-               src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4"></video>
+        <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4"
+               loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+        <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4"
+               loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+        <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4"
+               loop muted playsinline preload="auto" crossorigin="anonymous"></video>
       </a-assets>
 
+      <!-- Cámara -->
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
+      <!-- Plano donde se verá el video, siempre frente a la cámara -->
       <a-entity id="video-holder" position="0 0 -2" visible="false">
         <a-plane id="video-plane"
-                 width="1" height="1.7"
+                 width="1"
+                 height="1.7"
                  material="shader: flat; src: #video1">
         </a-plane>
       </a-entity>
 
+      <!-- Targets solo para detección -->
       <a-entity mindar-image-target="targetIndex: 0" id="target0"></a-entity>
       <a-entity mindar-image-target="targetIndex: 1" id="target1"></a-entity>
       <a-entity mindar-image-target="targetIndex: 2" id="target2"></a-entity>
+
     </a-scene>
 
+    <!-- Script de control -->
     <script>
       window.onload = () => {
-        const scene = document.querySelector('a-scene');
-        scene.addEventListener('renderstart', () => {
-          const holder = document.getElementById('video-holder');
-          const videoPlane = document.getElementById('video-plane');
+        const sceneEl = document.querySelector('a-scene');
+        const holder = document.querySelector('#video-holder');
+        const videoPlane = document.querySelector('#video-plane');
 
-          const videos = {
-            0: document.getElementById('video2'),
-            1: document.getElementById('video3'),
-            2: document.getElementById('video1'),
-          };
+        const videos = {
+          0: document.querySelector('#video2'), // izquierda
+          1: document.querySelector('#video3'), // derecha
+          2: document.querySelector('#video1'), // centro
+        };
 
-          [0,1,2].forEach(index => {
-            const target = document.getElementById(`target${index}`);
+        // Esperar a que cargue la escena
+        sceneEl.addEventListener('loaded', () => {
+          [0, 1, 2].forEach(index => {
+            const target = document.querySelector(`#target${index}`);
+
             target.addEventListener('targetFound', () => {
-              console.log("Target", index, "found");
+              console.log(`🎯 Target ${index} found`);
               const vid = videos[index];
+
+              // Actualizar el video en el plano
               videoPlane.setAttribute('material', `shader: flat; src: #${vid.id}`);
               vid.currentTime = 0;
-              vid.play().catch(() => {});
+              vid.play().catch(e => console.warn('⛔ Error play:', e));
               holder.setAttribute('visible', true);
             });
+
             target.addEventListener('targetLost', () => {
               const vid = videos[index];
               vid.pause();
               holder.setAttribute('visible', false);
+              console.log(`👋 Target ${index} lost`);
             });
           });
         });
 
-        document.body.addEventListener('click', () => {
-          document.querySelectorAll('video').forEach(v => v.play().catch(() => {}));
-        });
+        // Desbloquear reproducción de video por restricción del navegador móvil
+        const unlock = () => {
+          document.querySelectorAll("video").forEach(video => {
+            video.play().then(() => video.pause()).catch(() => {});
+          });
+          document.body.removeEventListener("touchstart", unlock);
+        };
+        document.body.addEventListener("touchstart", unlock, { once: true });
       };
     </script>
   </body>
