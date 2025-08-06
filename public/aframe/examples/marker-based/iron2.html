@@ -38,65 +38,8 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
 ---------------------------------
 
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
-    <script>
-      AFRAME.registerComponent("video-handler", {
-        init: function () {
-          const video = document.querySelector("#myVideo");
 
-          const unlock = () => {
-            video.play().then(() => {
-              video.pause(); 
-            }).catch(e => console.log("Error al desbloquear video:", e));
-            window.removeEventListener("touchstart", unlock);
-          };
-          window.addEventListener("touchstart", unlock, { once: true });
 
-          this.el.sceneEl.addEventListener("targetFound", () => {
-            video.play();
-          });
-
-          this.el.sceneEl.addEventListener("targetLost", () => {
-            video.pause();
-          });
-        }
-      });
-    </script>
-  </head>
-  <body>
-    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/mural.mind;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <video id="myVideo" 
-               src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/video2.mp4" 
-               loop 
-               muted 
-               playsinline 
-               preload="auto" 
-               crossorigin="anonymous">
-        </video>
-      </a-assets>
-
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <a-entity mindar-image-target="targetIndex: 0" video-handler>
-        <a-video src="#myVideo" width="1.2" height="0.7" position="0 0 0" rotation="0 0 0"></a-video>
-      </a-entity>
-      
-    </a-scene>
-  </body>
-</html>
-
--->
 
 <html>
   <head>
@@ -177,7 +120,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
      
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
-        <!--<a-video src="#video2"  position="-0.4 0 0" rotation="0 30 0"  responsive-video></a-video>-->
+        <a-video src="#video2"  position="-0.4 0 0" rotation="0 30 0"  responsive-video></a-video>
         <a-plane 
           material="shader: flat; src: #video2" 
           position="0 0 0" 
@@ -190,7 +133,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
       
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video3">
-        <!--<a-video src="#video3"  position="0.4 0 0" rotation="0 -30 0" responsive-video></a-video>-->
+        <a-video src="#video3"  position="0.4 0 0" rotation="0 -30 0" responsive-video></a-video>
         <a-plane 
           material="shader: flat; src: #video3" 
           position="0 0 0" 
@@ -203,7 +146,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
       
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video1">
-        <!--<a-video src="#video1" position="0 0 0" rotation="0 0 0" responsive-video></a-video>-->
+       <a-video src="#video1" position="0 0 0" rotation="0 0 0" responsive-video></a-video>
         <a-plane 
           material="shader: flat; src: #video1" 
           position="0 0 0" 
@@ -216,4 +159,75 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
   
     </a-scene>
   </body>
+</html>-->
+
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+ </head>
+
+  <body>
+<a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsc.mind;"
+         color-space="sRGB"
+         renderer="colorManagement: true, physicallyCorrectLights"
+         vr-mode-ui="enabled: false"
+         device-orientation-permission-ui="enabled: false">
+
+  <a-assets>
+    <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+    <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+    <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+  </a-assets>
+
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+  <!-- Video overlay fijo frente a la cámara -->
+  <a-entity id="video-holder" position="0 0 -2" visible="false">
+    <a-plane id="video-plane"
+             width="1"
+             height="1.7"
+             material="shader: flat; src: #video1">
+    </a-plane>
+  </a-entity>
+
+  <!-- Targets invisibles solo para detección -->
+  <a-entity mindar-image-target="targetIndex: 0" id="target0"></a-entity>
+  <a-entity mindar-image-target="targetIndex: 1" id="target1"></a-entity>
+  <a-entity mindar-image-target="targetIndex: 2" id="target2"></a-entity>
+
+</a-scene>
+ </body>
 </html>
+
+<script>
+  AFRAME.scenes[0].addEventListener("loaded", () => {
+    const sceneEl = document.querySelector('a-scene');
+    const holder = document.querySelector('#video-holder');
+    const videoPlane = document.querySelector('#video-plane');
+
+    const videos = {
+      0: document.querySelector('#video2'), // izquierda
+      1: document.querySelector('#video3'), // derecha
+      2: document.querySelector('#video1'), // centro
+    };
+
+    [0, 1, 2].forEach(index => {
+      const target = document.querySelector(`#target${index}`);
+      target.addEventListener("targetFound", () => {
+        const vid = videos[index];
+        videoPlane.setAttribute("material", "src", `#${vid.id}`);
+        vid.play();
+        holder.setAttribute("visible", true);
+      });
+
+      target.addEventListener("targetLost", () => {
+        const vid = videos[index];
+        vid.pause();
+        holder.setAttribute("visible", false);
+      });
+    });
+  });
+</script>
