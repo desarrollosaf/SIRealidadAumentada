@@ -1,127 +1,120 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>AR Video Viewer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+  <meta charset="utf-8">
+  <title>AR Video Overlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Estilos para pantalla completa -->
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: black;
-        height: 100%;
-        width: 100%;
-      }
+  <!-- MindAR Scripts -->
+  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
-      a-scene {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100% !important;
-        width: 100% !important;
-      }
-    </style>
+  <!-- Estilos -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: black;
+      height: 100%;
+      overflow: hidden;
+    }
 
-    <!-- Librerías necesarias -->
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
-  </head>
+    #video-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90vw;
+      height: auto;
+      max-height: 80vh;
+      background: black;
+      display: none;
+      z-index: 9999;
+    }
 
-  <body>
-    <a-scene
-      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsc.mind;"
-      color-space="sRGB"
-      renderer="colorManagement: true, physicallyCorrectLights"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      embedded
-    >
+    #video-container video {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
 
-      <!-- Assets de video -->
-      <a-assets>
-        <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4"
-               preload="auto" playsinline muted crossorigin="anonymous" loop></video>
-        <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4"
-               preload="auto" playsinline muted crossorigin="anonymous" loop></video>
-        <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4"
-               preload="auto" playsinline muted crossorigin="anonymous" loop></video>
-      </a-assets>
+  <!-- Video Container -->
+  <div id="video-container">
+    <video id="active-video" controls muted playsinline></video>
+  </div>
 
-      <!-- Cámara -->
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <!-- AR Scene (solo detección, sin render de video aquí) -->
+  <a-scene
+    mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsc.mind;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    embedded
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+  >
 
-      <!-- Plano de video (fijo frente a la cámara) -->
-      <a-video id="video-plane"
-               position="0 0 -2"
-               width="1"
-               height="1.7"
-               visible="false"
-               autoplay
-               loop
-               muted
-               playsinline>
-      </a-video>
+    <a-assets>
+      <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" preload="auto" loop muted playsinline></video>
+      <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" preload="auto" loop muted playsinline></video>
+      <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" preload="auto" loop muted playsinline></video>
+    </a-assets>
 
-      <!-- Targets invisibles para detección -->
-      <a-entity mindar-image-target="targetIndex: 0" id="target0"></a-entity>
-      <a-entity mindar-image-target="targetIndex: 1" id="target1"></a-entity>
-      <a-entity mindar-image-target="targetIndex: 2" id="target2"></a-entity>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    </a-scene>
+    <!-- Targets para detección -->
+    <a-entity mindar-image-target="targetIndex: 0" id="target0"></a-entity>
+    <a-entity mindar-image-target="targetIndex: 1" id="target1"></a-entity>
+    <a-entity mindar-image-target="targetIndex: 2" id="target2"></a-entity>
 
-    <!-- Lógica -->
-    <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        const sceneEl = document.querySelector('a-scene');
-        const videoPlane = document.querySelector('#video-plane');
+  </a-scene>
 
-        const videos = {
-          0: document.querySelector('#video2'), // izquierda
-          1: document.querySelector('#video3'), // derecha
-          2: document.querySelector('#video1'), // centro
-        };
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('video-container');
+      const videoElement = document.getElementById('active-video');
 
-        // Forzar reproducción tras interacción
-        document.body.addEventListener("click", () => {
-          Object.values(videos).forEach(video => {
-            video.play().catch(() => {});
+      const videos = {
+        0: document.getElementById('video2'), // izquierda
+        1: document.getElementById('video3'), // derecha
+        2: document.getElementById('video1'), // centro
+      };
+
+      const sceneEl = document.querySelector('a-scene');
+
+      // Requiere interacción previa para reproducir video
+      document.body.addEventListener("click", () => {
+        Object.values(videos).forEach(video => {
+          video.play().catch(() => {});
+        });
+      }, { once: true });
+
+      sceneEl.addEventListener("loaded", () => {
+        [0, 1, 2].forEach(index => {
+          const target = document.getElementById(`target${index}`);
+
+          target.addEventListener("targetFound", () => {
+            const sourceVideo = videos[index];
+            videoElement.src = sourceVideo.src;
+            videoElement.currentTime = 0;
+            videoElement.play().catch(() => {});
+            container.style.display = "block";
+            console.log(`✅ Target ${index} detectado. Video: ${sourceVideo.src}`);
           });
-        }, { once: true });
 
-        sceneEl.addEventListener("loaded", () => {
-          [0, 1, 2].forEach(index => {
-            const target = document.querySelector(`#target${index}`);
-            target.addEventListener("targetFound", () => {
-              const vid = videos[index];
-
-              // Detener todos los videos
-              Object.values(videos).forEach(v => {
-                v.pause();
-                v.currentTime = 0;
-              });
-
-              // Mostrar y reproducir el correspondiente
-              videoPlane.setAttribute("src", `#${vid.id}`);
-              vid.play().catch(() => {});
-              videoPlane.setAttribute("visible", true);
-
-              console.log("📌 Target", index, "detectado. Mostrando video:", vid.id);
-            });
-
-            target.addEventListener("targetLost", () => {
-              const vid = videos[index];
-              vid.pause();
-              videoPlane.setAttribute("visible", false);
-
-              console.log("❌ Target", index, "perdido.");
-            });
+          target.addEventListener("targetLost", () => {
+            videoElement.pause();
+            videoElement.src = "";
+            container.style.display = "none";
+            console.log(`❌ Target ${index} perdido.`);
           });
         });
       });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>
