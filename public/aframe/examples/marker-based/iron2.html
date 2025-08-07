@@ -161,7 +161,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
   </head>
 
   <body>
-    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsReducido.mind;"
+    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind;"
              color-space="sRGB"
              renderer="colorManagement: true, physicallyCorrectLights"
              vr-mode-ui="enabled: false"
@@ -189,10 +189,10 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       </a-entity>
 
       
-      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video3">
-        <!--<a-video src="#video3"  position="0.4 0 0" rotation="0 -30 0" responsive-video></a-video>-->
+      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
+        <!--<a-video src="#video1"  position="0.4 0 0" rotation="0 -30 0" responsive-video></a-video>-->
         <a-plane 
-          material="shader: flat; src: #video3" 
+          material="shader: flat; src: #video1" 
           position="0 0 0" 
           rotation="0 0 0" 
           width="0.8" 
@@ -202,10 +202,10 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       </a-entity>
 
       
-      <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video1">
-        <!--<a-video src="#video1" position="0 0 0" rotation="0 0 0" responsive-video></a-video>-->
+      <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
+        <!--<a-video src="#video3" position="0 0 0" rotation="0 0 0" responsive-video></a-video>-->
         <a-plane 
-          material="shader: flat; src: #video1" 
+          material="shader: flat; src: #video3" 
           position="0 0 0" 
           rotation="0 0 0" 
           width="0.8" 
