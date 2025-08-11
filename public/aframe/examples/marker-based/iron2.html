@@ -123,74 +123,39 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
           this.el.addEventListener("targetLost", () => { video.pause(); });
         }
       });
-      
-      // Componente dead-zone para mayor suavidad (mantenido)
-      AFRAME.registerComponent('dead-zone-media-movil', {
-        schema: { 
-          threshold: { type: 'number', default: 0.02 },
-          lerpFactor: { type: 'number', default: 0.2 },
-          windowSize: { type: 'int', default: 10 },
-          maxDeltaPos: { type: 'number', default: 0.05 },
-          maxDeltaRot: { type: 'number', default: 0.02 }
+
+      AFRAME.registerComponent('low-pass-filter', {
+        schema: {
+          alpha: { type: 'number', default: 0.05 } // 0 muy suave, 1 sin filtro
         },
-        init: function () {
-          this.lastPos = new THREE.Vector3();
-          this.lastQuat = new THREE.Quaternion();
-          this.firstUpdate = true;
-          this.posHistory = [];
-          this.quatHistory = [];
+        init() {
+          this.filteredPos = new THREE.Vector3();
+          this.filteredQuat = new THREE.Quaternion();
+          this.initialized = false;
         },
-        tick: function () {
+        tick() {
           const obj = this.el.object3D;
-          if (this.firstUpdate) {
-            this.lastPos.copy(obj.position);
-            this.lastQuat.copy(obj.quaternion);
-            this.firstUpdate = false;
-            for(let i=0; i < this.data.windowSize; i++){
-              this.posHistory.push(obj.position.clone());
-              this.quatHistory.push(obj.quaternion.clone());
-            }
+          if (!this.initialized) {
+            this.filteredPos.copy(obj.position);
+            this.filteredQuat.copy(obj.quaternion);
+            this.initialized = true;
             return;
           }
-          const deltaPos = obj.position.clone().sub(this.lastPos).length();
-          const deltaRot = obj.quaternion.angleTo(this.lastQuat);
-          if (deltaPos > this.data.threshold || deltaRot > this.data.threshold) {
-            this.posHistory.push(obj.position.clone());
-            if (this.posHistory.length > this.data.windowSize) this.posHistory.shift();
-            this.quatHistory.push(obj.quaternion.clone());
-            if (this.quatHistory.length > this.data.windowSize) this.quatHistory.shift();
-            let avgPos = new THREE.Vector3(0,0,0);
-            this.posHistory.forEach(p => avgPos.add(p));
-            avgPos.divideScalar(this.posHistory.length);
-            let avgQuat = this.quatHistory[0].clone();
-            for(let i=1; i<this.quatHistory.length; i++){
-              avgQuat.slerp(this.quatHistory[i], 1/(i+1));
-            }
-            let deltaVec = avgPos.clone().sub(this.lastPos);
-            if (deltaVec.length() > this.data.maxDeltaPos) {
-              deltaVec.setLength(this.data.maxDeltaPos);
-            }
-            let targetPos = this.lastPos.clone().add(deltaVec);
-            this.lastPos.lerp(targetPos, this.data.lerpFactor);
-            let angleTo = this.lastQuat.angleTo(avgQuat);
-            let t = 1;
-            if(angleTo > this.data.maxDeltaRot){
-              t = this.data.maxDeltaRot / angleTo;
-            }
-            this.lastQuat.slerp(avgQuat, t * this.data.lerpFactor);
-            obj.position.copy(this.lastPos);
-            obj.quaternion.copy(this.lastQuat);
-          } else {
-            obj.position.copy(this.lastPos);
-            obj.quaternion.copy(this.lastQuat);
-          }
+          // filteredPos = alpha * current + (1 - alpha) * filtered
+          this.filteredPos.lerp(obj.position, this.data.alpha);
+          // filteredQuat slerp con alpha
+          this.filteredQuat.slerp(obj.quaternion, this.data.alpha);
+          // aplicar filtrado
+          obj.position.copy(this.filteredPos);
+          obj.quaternion.copy(this.filteredQuat);
         }
       });
     </script>
   </head>
+
   <body>
     <a-scene
-      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.0002; filterBeta: 1000;"
+      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.001; filterBeta: 15;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights"
       vr-mode-ui="enabled: false"
@@ -201,19 +166,24 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
         <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
         <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
       </a-assets>
+
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
-        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1"></a-plane>
+        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" low-pass-filter></a-plane>
       </a-entity>
+
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
-        <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1"></a-plane>
+        <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1" low-pass-filter></a-plane>
       </a-entity>
+
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1"></a-plane>
+        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" low-pass-filter></a-plane>
       </a-entity>
     </a-scene>
   </body>
 </html>
+
 
 
   
