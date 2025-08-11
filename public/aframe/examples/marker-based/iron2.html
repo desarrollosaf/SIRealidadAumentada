@@ -129,7 +129,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       AFRAME.registerComponent('dead-zone', {
         schema: { 
           threshold: { type: 'number', default: 0.01 },   // umbral para aplicar suavizado
-          lerpFactor: { type: 'number', default: 0.1 }   // factor de interpolación (0 a 1)
+          lerpFactor: { type: 'number', default: 0.3 }   // factor de interpolación (0 a 1)
         },
         init: function () {
           this.lastPos = new THREE.Vector3();
@@ -189,16 +189,16 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
  
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
-        <a-plane material="shader: flat; src: #video2" width="1.2" height="2.1" dead-zone></a-plane>
+        <a-plane material="shader: flat; src: #video2" width="1.8" height="2.8" dead-zone></a-plane>
       </a-entity>
 
 
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
-        <a-plane material="shader: flat; src: #video1" width="1.2" height="2.1" dead-zone></a-plane>
+        <a-plane material="shader: flat; src: #video1" width="1.8" height="2.8" dead-zone></a-plane>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-plane material="shader: flat; src: #video3" width="1.2" height="2.1" dead-zone></a-plane>
+        <a-plane material="shader: flat; src: #video3" width="1.8" height="2.8" dead-zone></a-plane>
       </a-entity>
   
     </a-scene>
