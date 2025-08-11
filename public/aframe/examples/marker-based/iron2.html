@@ -119,92 +119,39 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
           };
           window.addEventListener("touchstart", unlock, { once: true });
 
-          this.el.addEventListener("targetFound", () => { video.play(); });
-          this.el.addEventListener("targetLost", () => { video.pause(); });
+          this.el.addEventListener("targetFound", () => {
+            video.play();
+            this.el.setAttribute('lock-transform', 'enabled', true);
+          });
+          this.el.addEventListener("targetLost", () => {
+            video.pause();
+            this.el.setAttribute('lock-transform', 'enabled', false);
+          });
         }
       });
 
-      AFRAME.registerComponent('dead-zone-media-movil', {
-        schema: { 
-          threshold: { type: 'number', default: 0.02 },
-          lerpFactor: { type: 'number', default: 0.2 },
-          windowSize: { type: 'int', default: 10 },
-          maxDeltaPos: { type: 'number', default: 0.05 },
-          maxDeltaRot: { type: 'number', default: 0.02 }
-        },
+      // Componente para "congelar" la posición y rotación cuando esté activo
+      AFRAME.registerComponent('lock-transform', {
+        schema: { enabled: { type: 'boolean', default: false } },
         init: function () {
-          this.lastPos = new THREE.Vector3();
-          this.lastQuat = new THREE.Quaternion();
-          this.firstUpdate = true;
-
-          this.posHistory = [];
-          this.quatHistory = [];
+          this.frozenPos = new THREE.Vector3();
+          this.frozenQuat = new THREE.Quaternion();
+          this.isLocked = false;
+        },
+        update: function () {
+          this.isLocked = this.data.enabled;
+          if (this.isLocked) {
+            const obj = this.el.object3D;
+            this.frozenPos.copy(obj.position);
+            this.frozenQuat.copy(obj.quaternion);
+          }
         },
         tick: function () {
-          const obj = this.el.object3D;
-
-          if (this.firstUpdate) {
-            this.lastPos.copy(obj.position);
-            this.lastQuat.copy(obj.quaternion);
-            this.firstUpdate = false;
-
-            for(let i=0; i < this.data.windowSize; i++){
-              this.posHistory.push(obj.position.clone());
-              this.quatHistory.push(obj.quaternion.clone());
-            }
-            return;
-          }
-
-          // Cambios actuales
-          const deltaPos = obj.position.clone().sub(this.lastPos).length();
-          // Para rotación, distancia angular quaternion:
-          const deltaRot = obj.quaternion.angleTo(this.lastQuat);
-
-          if (deltaPos > this.data.threshold || deltaRot > this.data.threshold) {
-            // Actualizamos historial
-            this.posHistory.push(obj.position.clone());
-            if (this.posHistory.length > this.data.windowSize) this.posHistory.shift();
-
-            this.quatHistory.push(obj.quaternion.clone());
-            if (this.quatHistory.length > this.data.windowSize) this.quatHistory.shift();
-
-            // Promedio posición
-            let avgPos = new THREE.Vector3(0,0,0);
-            this.posHistory.forEach(p => avgPos.add(p));
-            avgPos.divideScalar(this.posHistory.length);
-
-            // Promedio quaternions (slerp en cadena)
-            let avgQuat = this.quatHistory[0].clone();
-            for(let i=1; i<this.quatHistory.length; i++){
-              avgQuat.slerp(this.quatHistory[i], 1/(i+1));
-            }
-
-            // Limitamos delta posición máximo
-            let deltaVec = avgPos.clone().sub(this.lastPos);
-            if (deltaVec.length() > this.data.maxDeltaPos) {
-              deltaVec.setLength(this.data.maxDeltaPos);
-            }
-            let targetPos = this.lastPos.clone().add(deltaVec);
-
-            // Lerp posición hacia target limitado
-            this.lastPos.lerp(targetPos, this.data.lerpFactor);
-
-            // Limitamos delta rotación máximo usando angleTo y slerp parcial
-            let angleTo = this.lastQuat.angleTo(avgQuat);
-            let t = 1;
-            if(angleTo > this.data.maxDeltaRot){
-              t = this.data.maxDeltaRot / angleTo;
-            }
-            this.lastQuat.slerp(avgQuat, t * this.data.lerpFactor);
-
-            // Asignamos posición y rotación al objeto
-            obj.position.copy(this.lastPos);
-            obj.quaternion.copy(this.lastQuat);
-
-          } else {
-            // No hay cambio significativo: mantener último estado suavizado
-            obj.position.copy(this.lastPos);
-            obj.quaternion.copy(this.lastQuat);
+          if (this.isLocked) {
+            const obj = this.el.object3D;
+            // Reaplicamos la posición y rotación congelada para evitar movimientos
+            obj.position.copy(this.frozenPos);
+            obj.quaternion.copy(this.frozenQuat);
           }
         }
       });
@@ -228,19 +175,20 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
-        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" dead-zone-media-movil></a-plane>
+        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
-        <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1" dead-zone-media-movil></a-plane>
+        <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" dead-zone-media-movil></a-plane>
+        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
     </a-scene>
   </body>
 </html>
+
 
 
   
