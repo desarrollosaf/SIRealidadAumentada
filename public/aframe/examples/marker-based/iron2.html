@@ -125,42 +125,38 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
         }
       });
 
-      // Componente para zona muerta (dead zone)
-      AFRAME.registerComponent('stable-video', {
-        schema: { target: { type: 'selector' }, threshold: { type: 'number', default: 0.003 } },
+      // Dead Zone aplicado al propio plano
+      AFRAME.registerComponent('dead-zone', {
+        schema: { threshold: { type: 'number', default: 0.003 } },
         init: function () {
           this.lastPos = new THREE.Vector3();
           this.lastRot = new THREE.Euler();
-          this.isFirstUpdate = true;
+          this.firstUpdate = true;
         },
         tick: function () {
-          if (!this.data.target) return;
-          const targetObj = this.data.target.object3D;
           const obj = this.el.object3D;
 
-          if (this.isFirstUpdate) {
-            this.lastPos.copy(targetObj.position);
-            this.lastRot.copy(targetObj.rotation);
-            obj.position.copy(this.lastPos);
-            obj.rotation.copy(this.lastRot);
-            this.isFirstUpdate = false;
+          if (this.firstUpdate) {
+            this.lastPos.copy(obj.position);
+            this.lastRot.copy(obj.rotation);
+            this.firstUpdate = false;
             return;
           }
 
-          // Distancia de movimiento
-          const deltaPos = targetObj.position.clone().sub(this.lastPos).length();
-          const deltaRot = Math.abs(targetObj.rotation.x - this.lastRot.x) +
-                           Math.abs(targetObj.rotation.y - this.lastRot.y) +
-                           Math.abs(targetObj.rotation.z - this.lastRot.z);
+          const deltaPos = obj.position.clone().sub(this.lastPos).length();
+          const deltaRot = Math.abs(obj.rotation.x - this.lastRot.x) +
+                           Math.abs(obj.rotation.y - this.lastRot.y) +
+                           Math.abs(obj.rotation.z - this.lastRot.z);
 
-          // Solo actualiza si el cambio supera el umbral
+          // Solo actualiza valores si hay cambio significativo
           if (deltaPos > this.data.threshold || deltaRot > 0.002) {
-            this.lastPos.copy(targetObj.position);
-            this.lastRot.copy(targetObj.rotation);
+            this.lastPos.copy(obj.position);
+            this.lastRot.copy(obj.rotation);
+          } else {
+            // Reasigna la última posición estable
+            obj.position.copy(this.lastPos);
+            obj.rotation.copy(this.lastRot);
           }
-
-          obj.position.copy(this.lastPos);
-          obj.rotation.copy(this.lastRot);
         }
       });
     </script>
@@ -183,25 +179,23 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <!-- Marcador 0 -->
-      <a-entity mindar-image-target="targetIndex: 0" id="marker0" video-handler="target: #video2"></a-entity>
-      <a-entity stable-video="target: #marker0; threshold: 0.002">
-        <a-plane material="shader: flat; src: #video2" width="0.8" height="1.4"></a-plane>
+      <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
+        <a-plane material="shader: flat; src: #video2" width="0.8" height="1.4" dead-zone></a-plane>
       </a-entity>
 
       <!-- Marcador 1 -->
-      <a-entity mindar-image-target="targetIndex: 1" id="marker1" video-handler="target: #video1"></a-entity>
-      <a-entity stable-video="target: #marker1; threshold: 0.002">
-        <a-plane material="shader: flat; src: #video1" width="0.8" height="1.4"></a-plane>
+      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
+        <a-plane material="shader: flat; src: #video1" width="0.8" height="1.4" dead-zone></a-plane>
       </a-entity>
 
       <!-- Marcador 2 -->
-      <a-entity mindar-image-target="targetIndex: 2" id="marker2" video-handler="target: #video3"></a-entity>
-      <a-entity stable-video="target: #marker2; threshold: 0.002">
-        <a-plane material="shader: flat; src: #video3" width="0.8" height="1.4"></a-plane>
+      <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
+        <a-plane material="shader: flat; src: #video3" width="0.8" height="1.4" dead-zone></a-plane>
       </a-entity>
   
     </a-scene>
   </body>
 </html>
+
 
 
