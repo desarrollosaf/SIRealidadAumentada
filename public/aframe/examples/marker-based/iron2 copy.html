@@ -106,9 +106,11 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
 
     <script>
-      // Control de video
+     
       AFRAME.registerComponent("video-handler", {
-        schema: { target: { type: "selector" } },
+        schema: {
+          target: { type: "selector" }
+        },
         init: function () {
           const video = this.data.target;
 
@@ -120,34 +122,53 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
           };
           window.addEventListener("touchstart", unlock, { once: true });
 
-          this.el.addEventListener("targetFound", () => { video.play(); });
-          this.el.addEventListener("targetLost", () => { video.pause(); });
+          this.el.addEventListener("targetFound", () => {
+            video.play();
+          });
+
+          this.el.addEventListener("targetLost", () => {
+            video.pause();
+          });
         }
       });
 
-      // Suavizado de seguimiento
-      AFRAME.registerComponent('smooth-follow', {
-        schema: { target: { type: 'selector' } },
-        tick: function () {
-          if (!this.data.target) return;
-          const targetObj = this.data.target.object3D;
-          const obj = this.el.object3D;
+      AFRAME.registerComponent("responsive-video", {
+          init: function () {
+            const videoEl = this.el;
+            const aspect = 9 / 16;
 
-          obj.position.lerp(targetObj.position, 0.15); // 0.15 = suavizado
-          obj.quaternion.slerp(targetObj.quaternion, 0.15);
-        }
+            const resize = () => {
+              const screenRatio = window.innerWidth / window.innerHeight;
+              let width, height;
+
+              if (screenRatio < aspect) {
+                width = 1.2;
+                height = width / aspect;
+              } else {
+                height = 2.5;
+                width = height * aspect;
+              }
+
+              videoEl.setAttribute("width", width);
+              videoEl.setAttribute("height", height);
+            };
+
+            window.addEventListener("resize", resize);
+            resize();
+          }
       });
     </script>
   </head>
 
   <body>
-    <a-scene
-      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.0001; filterBeta: 10;"
+   <a-scene
+      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.0002; filterBeta: 3000;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
     >
+
       <a-assets>
         <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
         <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
@@ -156,22 +177,43 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Marcador 0 -->
-      <a-entity mindar-image-target="targetIndex: 0" id="marker0" video-handler="target: #video2"></a-entity>
-      <a-entity smooth-follow="target: #marker0">
-        <a-plane material="shader: flat; src: #video2" width="0.8" height="1.4"></a-plane>
+     
+      <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
+        <!--<a-video src="#video2"  position="-0.4 0 0" rotation="0 30 0"  responsive-video></a-video>-->
+        <a-plane 
+          material="shader: flat; src: #video2" 
+          position="0 0 0" 
+          rotation="0 0 0" 
+          width="0.8" 
+          height="1.4"
+           look-at="[camera]"> 
+        </a-plane>
       </a-entity>
 
-      <!-- Marcador 1 -->
-      <a-entity mindar-image-target="targetIndex: 1" id="marker1" video-handler="target: #video1"></a-entity>
-      <a-entity smooth-follow="target: #marker1">
-        <a-plane material="shader: flat; src: #video1" width="0.8" height="1.4"></a-plane>
+      
+      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
+        <!--<a-video src="#video1"  position="0.4 0 0" rotation="0 -30 0" responsive-video></a-video>-->
+        <a-plane 
+          material="shader: flat; src: #video1" 
+          position="0 0 0" 
+          rotation="0 0 0" 
+          width="0.8" 
+          height="1.4"
+          look-at="[camera]">
+        </a-plane>
       </a-entity>
 
-      <!-- Marcador 2 -->
-      <a-entity mindar-image-target="targetIndex: 2" id="marker2" video-handler="target: #video3"></a-entity>
-      <a-entity smooth-follow="target: #marker2">
-        <a-plane material="shader: flat; src: #video3" width="0.8" height="1.4"></a-plane>
+      
+      <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
+        <!--<a-video src="#video3" position="0 0 0" rotation="0 0 0" responsive-video></a-video>-->
+        <a-plane 
+          material="shader: flat; src: #video3" 
+          position="0 0 0" 
+          rotation="0 0 0" 
+          width="0.8" 
+          height="1.4"
+           look-at="[camera]"> 
+        </a-plane>
       </a-entity>
   
     </a-scene>
