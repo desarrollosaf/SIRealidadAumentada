@@ -98,94 +98,103 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
 -->
 
-<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>MindAR Video Estable</title>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { position: absolute; top: 0; left: 0; }
-  </style>
-</head>
-<body>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-    container: document.body,
-    imageTargetSrc: "https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind" // tu archivo .mind
-  });
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
 
-  const { renderer, scene, camera } = mindarThree;
+    <script>
+      
+      AFRAME.registerComponent("video-handler", {
+        schema: { target: { type: "selector" } },
+        init: function () {
+          const video = this.data.target;
 
-  // Crear video
-  const video = document.createElement("video");
-  video.src = "https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4"; // tu video
-  video.crossOrigin = "anonymous";
-  video.loop = true;
-  video.muted = true;
-  video.playsInline = true;
+          const unlock = () => {
+            video.play().then(() => {
+              video.pause();
+            }).catch(e => console.log("Error al desbloquear video:", e));
+            window.removeEventListener("touchstart", unlock);
+          };
+          window.addEventListener("touchstart", unlock, { once: true });
 
-  const texture = new THREE.VideoTexture(video);
-  const geometry = new THREE.PlaneGeometry(1.8, 1.0); // más grande que 1x0.5
-  const material = new THREE.MeshBasicMaterial({ map: texture });
-  const plane = new THREE.Mesh(geometry, material);
+          this.el.addEventListener("targetFound", () => { video.play(); });
+          this.el.addEventListener("targetLost", () => { video.pause(); });
+        }
+      });
 
-  const anchor = mindarThree.addAnchor(0);
-  anchor.group.add(plane);
+      
+      AFRAME.registerComponent('dead-zone', {
+        schema: { threshold: { type: 'number', default: 0.003 } },
+        init: function () {
+          this.lastPos = new THREE.Vector3();
+          this.lastRot = new THREE.Euler();
+          this.firstUpdate = true;
+        },
+        tick: function () {
+          const obj = this.el.object3D;
 
-  // Dead zone + suavizado
-  let lastPosition = new THREE.Vector3();
-  let lastQuaternion = new THREE.Quaternion();
-  const deadZonePos = 0.005;   // cuanto más alto, menos temblores
-  const deadZoneRot = 0.005;
-  const smoothFactor = 0.2;    // 0 = no suavizado, 1 = muy lento
+          if (this.firstUpdate) {
+            this.lastPos.copy(obj.position);
+            this.lastRot.copy(obj.rotation);
+            this.firstUpdate = false;
+            return;
+          }
 
-  anchor.onTargetFound = () => {
-    video.play();
-  };
-  anchor.onTargetLost = () => {
-    video.pause();
-  };
+          const deltaPos = obj.position.clone().sub(this.lastPos).length();
+          const deltaRot = Math.abs(obj.rotation.x - this.lastRot.x) +
+                           Math.abs(obj.rotation.y - this.lastRot.y) +
+                           Math.abs(obj.rotation.z - this.lastRot.z);
 
-  const clock = new THREE.Clock();
+         
+          if (deltaPos > this.data.threshold || deltaRot > 0.002) {
+            this.lastPos.copy(obj.position);
+            this.lastRot.copy(obj.rotation);
+          } else {
+            
+            obj.position.copy(this.lastPos);
+            obj.rotation.copy(this.lastRot);
+          }
+        }
+      });
+    </script>
+  </head>
 
-  renderer.setAnimationLoop(() => {
-    const delta = clock.getDelta();
+  <body>
+    <a-scene
+      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.0001; filterBeta: 10;"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <a-assets>
+        <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+        <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+        <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+      </a-assets>
 
-    // Si el ancla está visible
-    if (anchor.group.visible) {
-      const currentPos = anchor.group.position.clone();
-      const currentQuat = anchor.group.quaternion.clone();
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      // Comparar posición con última
-      if (currentPos.distanceTo(lastPosition) > deadZonePos) {
-        lastPosition.lerp(currentPos, smoothFactor);
-        anchor.group.position.copy(lastPosition);
-      } else {
-        anchor.group.position.copy(lastPosition);
-      }
+ 
+      <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
+        <a-plane material="shader: flat; src: #video2" width="0.8" height="1.4" dead-zone></a-plane>
+      </a-entity>
 
-      // Comparar rotación
-      if (1 - Math.abs(currentQuat.dot(lastQuaternion)) > deadZoneRot) {
-        lastQuaternion.slerp(currentQuat, smoothFactor);
-        anchor.group.quaternion.copy(lastQuaternion);
-      } else {
-        anchor.group.quaternion.copy(lastQuaternion);
-      }
-    }
 
-    renderer.render(scene, camera);
-  });
+      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
+        <a-plane material="shader: flat; src: #video1" width="0.8" height="1.4" dead-zone></a-plane>
+      </a-entity>
 
-  mindarThree.start();
-});
-</script>
-</body>
+      <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
+        <a-plane material="shader: flat; src: #video3" width="0.8" height="1.4" dead-zone></a-plane>
+      </a-entity>
+  
+    </a-scene>
+  </body>
 </html>
-
 
 
 
