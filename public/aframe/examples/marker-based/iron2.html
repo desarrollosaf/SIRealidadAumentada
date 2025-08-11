@@ -129,7 +129,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       AFRAME.registerComponent('dead-zone', {
         schema: { 
           threshold: { type: 'number', default: 0.01 },   // umbral para aplicar suavizado
-          lerpFactor: { type: 'number', default: 0.3 }   // factor de interpolación (0 a 1)
+          lerpFactor: { type: 'number', default: 0.5 }   // factor de interpolación (0 a 1)
         },
         init: function () {
           this.lastPos = new THREE.Vector3();
