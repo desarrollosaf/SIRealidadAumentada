@@ -121,18 +121,16 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
           this.el.addEventListener("targetFound", () => {
             video.play();
-            this.el.setAttribute('visible', true);
             this.el.setAttribute('lock-transform', 'enabled', true);
           });
           this.el.addEventListener("targetLost", () => {
             video.pause();
-            this.el.setAttribute('visible', false);
             this.el.setAttribute('lock-transform', 'enabled', false);
           });
         }
       });
 
-      // Para "congelar" posición/rotación
+      // Componente para "congelar" la posición y rotación cuando esté activo
       AFRAME.registerComponent('lock-transform', {
         schema: { enabled: { type: 'boolean', default: false } },
         init: function () {
@@ -151,6 +149,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
         tick: function () {
           if (this.isLocked) {
             const obj = this.el.object3D;
+            // Reaplicamos la posición y rotación congelada para evitar movimientos
             obj.position.copy(this.frozenPos);
             obj.quaternion.copy(this.frozenQuat);
           }
@@ -168,29 +167,23 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       device-orientation-permission-ui="enabled: false"
     >
       <a-assets>
-        <!-- GIF directo como imagen -->
-        <img id="gif1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/muralcongresoG.gif" crossorigin="anonymous">
-
-        <!-- Videos normales -->
+        <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
         <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
         <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Video 1 -->
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
-        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" visible="false" lock-transform></a-plane>
+        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
 
-      <!-- GIF (se animará solo, no requiere video-handler) -->
-      <a-entity mindar-image-target="targetIndex: 1">
-        <a-plane material="shader: flat; src: #gif1" width="2.1" height="3.1" visible="false" lock-transform></a-plane>
+      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
+        <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
 
-      <!-- Video 2 -->
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" visible="false" lock-transform></a-plane>
+        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
     </a-scene>
   </body>
