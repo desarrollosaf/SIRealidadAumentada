@@ -167,7 +167,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       device-orientation-permission-ui="enabled: false"
     >
       <a-assets>
-        <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/muralcongresoG.gif" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+        <img id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/muralcongreso.gif" alt="GIF animado">
         <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
         <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
       </a-assets>
@@ -175,7 +175,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" video-handler="target: #video2">
-        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform></a-plane>
+        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform ></a-plane></a-plane>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
