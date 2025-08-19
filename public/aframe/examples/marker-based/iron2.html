@@ -123,17 +123,18 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
           this.el.addEventListener("targetFound", () => {
             video.play();
-            // Deshabilitar el movimiento de la entidad al encontrar el objetivo
+            // Congelar la transformación cuando la imagen es detectada
             this.el.setAttribute('lock-transform', 'enabled', true);
           });
           this.el.addEventListener("targetLost", () => {
             video.pause();
-            // Desbloquear el transform si se pierde el objetivo
+            // Descongelar la transformación cuando la imagen se pierde
             this.el.setAttribute('lock-transform', 'enabled', false);
           });
         }
       });
 
+      // Componente para congelar la posición y rotación cuando está activo
       AFRAME.registerComponent('lock-transform', {
         schema: { enabled: { type: 'boolean', default: false } },
         init: function () {
@@ -162,7 +163,7 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
   <body>
     <a-scene
-      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.001; filterBeta: 15;"
+      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.01; filterBeta: 20;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights"
       vr-mode-ui="enabled: false"
@@ -170,29 +171,19 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     >
       <a-assets>
         <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
-        <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
-        <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Image Target 1 -->
+      <!-- Image Target -->
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform></a-plane>
-      </a-entity>
-
-      <!-- Image Target 2 -->
-      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
+        <!-- Aquí asignamos el video al marcador con el componente lock-transform -->
         <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1" lock-transform></a-plane>
-      </a-entity>
-
-      <!-- Image Target 3 -->
-      <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
     </a-scene>
   </body>
 </html>
+
 
 
 
