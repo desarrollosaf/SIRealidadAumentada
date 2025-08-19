@@ -104,27 +104,26 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
-
     <script>
-      AFRAME.registerComponent("video-handler", {
-        schema: { target: { type: "selector" } },
+      AFRAME.registerComponent("gif-handler", {
+        schema: {
+          target: { type: "selector" }
+        },
         init: function () {
-          const video = this.data.target;
-
+          const gif = this.data.target;
           const unlock = () => {
-            video.play().then(() => {
-              video.pause();
-            }).catch(e => console.log("Error al desbloquear video:", e));
+            gif.play().then(() => {
+              gif.pause();
+            }).catch(e => console.log("Error al desbloquear GIF:", e));
             window.removeEventListener("touchstart", unlock);
           };
           window.addEventListener("touchstart", unlock, { once: true });
-
           this.el.addEventListener("targetFound", () => {
-            video.play();
+            gif.play();
             this.el.setAttribute('lock-transform', 'enabled', true);
           });
           this.el.addEventListener("targetLost", () => {
-            video.pause();
+            gif.pause();
             this.el.setAttribute('lock-transform', 'enabled', false);
           });
         }
@@ -149,7 +148,6 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
         tick: function () {
           if (this.isLocked) {
             const obj = this.el.object3D;
-            // Reaplicamos la posición y rotación congelada para evitar movimientos
             obj.position.copy(this.frozenPos);
             obj.quaternion.copy(this.frozenQuat);
           }
@@ -157,39 +155,35 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
       });
     </script>
   </head>
-
   <body>
-    <a-scene
-      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.001; filterBeta: 15;"
-      color-space="sRGB"
-      renderer="colorManagement: true, physicallyCorrectLights"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-    >
+    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.001; filterBeta: 15;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-assets>
         <img id="gif1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/congreso2GIF.gif">
         <!--<video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>-->
         <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
         <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
       </a-assets>
-
+      
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <a-entity mindar-image-target="targetIndex: 0" >
+      
+      <!-- Primer target con GIF -->
+      <a-entity mindar-image-target="targetIndex: 0">
         <a-plane material="shader: flat; src: #gif1" width="2.1" height="3.1" lock-transform></a-plane>
-        <!--<a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform></a-plane>-->
       </a-entity>
 
-      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
-        <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1" lock-transform></a-plane>
+      <!-- Segundo target con video -->
+      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video2">
+        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
 
+      <!-- Tercer target con otro video -->
       <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
         <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
     </a-scene>
   </body>
 </html>
+
 
 
 
