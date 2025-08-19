@@ -5,42 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AR Mural Video</title>
 
+  <!-- Three.js y ARButton -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js"></script>
+
+  <!-- TensorFlow.js y MobileNet -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; touch-action: none; }
+    video { display: none; }
+    canvas { display: block; }
+  </style>
 </head>
 <body>
+  <!-- Video que se reproducirá sobre el mural -->
   <video id="srcVideo" playsinline webkit-playsinline muted loop preload="auto">
-    <source src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" type="video/mp4" />
+    <source src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" type="video/mp4">
   </video>
 
-  <img id="refImg" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/pablo1.jpg" style="display:none" crossorigin="anonymous"/>
+  <!-- Imagen de referencia -->
+  <img id="refImg" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/pablo1.jpg" style="display:none" crossorigin="anonymous">
+
+  <!-- Canvas oculto para análisis de frames -->
   <canvas id="analyzer" width="224" height="224" style="display:none"></canvas>
 
 <script>
 window.addEventListener('load', async () => {
+  // Cargar MobileNet
   const mobilenetModel = await mobilenet.load({version: 2, alpha: 1.0});
   const refImg = document.getElementById('refImg');
-  await new Promise(res => { if (refImg.complete) res(); else refImg.onload = res; });
+  await new Promise(res => refImg.complete ? res() : refImg.onload = res);
+
   const refEmbedding = tf.tidy(() => mobilenetModel.infer(refImg, true).dataSync());
 
   function cosineSim(a, b) {
-    let dot = 0, na = 0, nb = 0;
-    for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+    let dot=0, na=0, nb=0;
+    for (let i=0; i<a.length; i++) { dot+=a[i]*b[i]; na+=a[i]*a[i]; nb+=b[i]*b[i]; }
     return dot / (Math.sqrt(na)*Math.sqrt(nb) + 1e-8);
   }
 
+  // Configuración del video de la cámara
   const analyzer = document.getElementById('analyzer');
   const actx = analyzer.getContext('2d');
   const cam = document.createElement('video');
-  cam.setAttribute('playsinline', '');
+  cam.setAttribute('playsinline','');
   cam.muted = true;
-  cam.style.display = 'none';
+  cam.style.display='none';
   document.body.appendChild(cam);
 
+  let stream;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     cam.srcObject = stream;
     await cam.play();
   } catch(err) {
@@ -48,7 +65,8 @@ window.addEventListener('load', async () => {
     return;
   }
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // Three.js + AR
+  const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
   document.body.appendChild(renderer.domElement);
@@ -60,16 +78,18 @@ window.addEventListener('load', async () => {
   const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
   scene.add(light);
 
+  // Video sobre mural
   const videoEl = document.getElementById('srcVideo');
   const videoTex = new THREE.VideoTexture(videoEl);
-  const planeGeom = new THREE.PlaneGeometry(1, 0.56);
-  const planeMat = new THREE.MeshBasicMaterial({ map: videoTex, side: THREE.DoubleSide });
-  const plane = new THREE.Mesh(planeGeom, planeMat);
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 0.56),
+    new THREE.MeshBasicMaterial({ map: videoTex, side: THREE.DoubleSide })
+  );
   plane.visible = false;
   scene.add(plane);
 
-  function placeInFront(distance = 1) {
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  function placeInFront(distance=1) {
+    const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
     const pos = new THREE.Vector3().copy(camera.position).add(dir.multiplyScalar(distance));
     plane.position.copy(pos);
     plane.quaternion.copy(camera.quaternion);
@@ -77,8 +97,8 @@ window.addEventListener('load', async () => {
 
   function analyzeFrame() {
     const s = Math.min(cam.videoWidth, cam.videoHeight);
-    const sx = (cam.videoWidth - s) / 2;
-    const sy = (cam.videoHeight - s) / 2;
+    const sx = (cam.videoWidth - s)/2;
+    const sy = (cam.videoHeight - s)/2;
     actx.drawImage(cam, sx, sy, s, s, 0, 0, 224, 224);
     const frameTensor = tf.browser.fromPixels(analyzer);
     const emb = mobilenetModel.infer(frameTensor, true).dataSync();
@@ -86,7 +106,7 @@ window.addEventListener('load', async () => {
     return cosineSim(refEmbedding, emb);
   }
 
-  let detected = false;
+  let detected=false;
   function renderLoop() {
     const sim = analyzeFrame();
     if (sim > 0.8 && !detected) {
@@ -98,9 +118,14 @@ window.addEventListener('load', async () => {
     renderer.render(scene, camera);
   }
 
-  // Crear botón ARButton automáticamente
-  document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: [] }));
-  renderer.setAnimationLoop(renderLoop);
+  // Inicia AR con primer toque
+  const startAR = () => {
+    document.body.removeEventListener('touchstart', startAR);
+    document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: [] }));
+    renderer.setAnimationLoop(renderLoop);
+  };
+  document.body.addEventListener('touchstart', startAR);
+
 });
 </script>
 </body>
