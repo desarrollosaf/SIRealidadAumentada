@@ -5,31 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AR Mural Video</title>
 
-  <!-- Three.js -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js"></script>
-
-  <!-- TensorFlow.js + MobileNet -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
 </head>
 <body>
-  <button id="btnStart">Iniciar AR</button>
-
-
-  <!-- Video que aparecerá sobre el mural -->
   <video id="srcVideo" playsinline webkit-playsinline muted loop preload="auto">
     <source src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" type="video/mp4" />
   </video>
 
-  <!-- Tu mural como referencia -->
   <img id="refImg" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/pablo1.jpg" style="display:none" crossorigin="anonymous"/>
-
-  <!-- Canvas oculto para análisis -->
   <canvas id="analyzer" width="224" height="224" style="display:none"></canvas>
 
 <script>
-(async () => {
+window.addEventListener('load', async () => {
   const mobilenetModel = await mobilenet.load({version: 2, alpha: 1.0});
   const refImg = document.getElementById('refImg');
   await new Promise(res => { if (refImg.complete) res(); else refImg.onload = res; });
@@ -41,20 +31,23 @@
     return dot / (Math.sqrt(na)*Math.sqrt(nb) + 1e-8);
   }
 
-  // Cámara para analizar frames
   const analyzer = document.getElementById('analyzer');
   const actx = analyzer.getContext('2d');
   const cam = document.createElement('video');
   cam.setAttribute('playsinline', '');
   cam.muted = true;
-  document.body.appendChild(cam);
   cam.style.display = 'none';
+  document.body.appendChild(cam);
 
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-  cam.srcObject = stream;
-  await cam.play();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    cam.srcObject = stream;
+    await cam.play();
+  } catch(err) {
+    alert('No se pudo acceder a la cámara: ' + err);
+    return;
+  }
 
-  // Three.js escena AR
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
@@ -69,7 +62,7 @@
 
   const videoEl = document.getElementById('srcVideo');
   const videoTex = new THREE.VideoTexture(videoEl);
-  const planeGeom = new THREE.PlaneGeometry(1, 0.56); // tamaño ~16:9
+  const planeGeom = new THREE.PlaneGeometry(1, 0.56);
   const planeMat = new THREE.MeshBasicMaterial({ map: videoTex, side: THREE.DoubleSide });
   const plane = new THREE.Mesh(planeGeom, planeMat);
   plane.visible = false;
@@ -94,7 +87,7 @@
   }
 
   let detected = false;
-  function renderLoop(t) {
+  function renderLoop() {
     const sim = analyzeFrame();
     if (sim > 0.8 && !detected) {
       detected = true;
@@ -105,12 +98,10 @@
     renderer.render(scene, camera);
   }
 
-  document.getElementById('btnStart').addEventListener('click', async () => {
-    document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: [] }));
-    renderer.setAnimationLoop(renderLoop);
-    document.getElementById('btnStart').remove();
-  });
-})();
+  // Crear botón ARButton automáticamente
+  document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: [] }));
+  renderer.setAnimationLoop(renderLoop);
+});
 </script>
 </body>
 </html>
