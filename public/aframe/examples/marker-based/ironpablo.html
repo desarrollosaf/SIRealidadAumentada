@@ -1,12 +1,8 @@
-
-
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>AR Múltiples Murales</title>
+  <title>AR Mural con Video</title>
   <!-- A-Frame + AR.js con soporte NFT -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://rawcdn.githack.com/AR-js-org/AR.js/3.4.2/aframe/build/aframe-ar-nft.js"></script>
@@ -21,25 +17,7 @@
     embedded
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
   >
-    <!-- 🎨 Mural 1 -->
-    <a-nft
-      type="nft"
-      url="https://sistemas.siasaf.gob.mx/aframe/examples/assets/pablo1" 
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance="0.01"
-      smoothThreshold="5"
-    >
-      <a-video
-        src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4"
-        width="1"
-        height="0.56"
-        autoplay
-        loop
-      ></a-video>
-    </a-nft>
-
-    <!-- 🎨 Mural 2 -->
+    <!-- 🎨 Mural con marcador NFT -->
     <a-nft
       type="nft"
       url="https://sistemas.siasaf.gob.mx/aframe/examples/assets/pablo1"
@@ -54,24 +32,8 @@
         height="0.56"
         autoplay
         loop
-      ></a-video>
-    </a-nft>
-
-    <!-- 🎨 Mural 3 -->
-    <a-nft
-      type="nft"
-      url="https://sistemas.siasaf.gob.mx/aframe/examples/assets/pablo1"
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance="0.01"
-      smoothThreshold="5"
-    >
-      <a-video
-        src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4"
-        width="1"
-        height="0.56"
-        autoplay
-        loop
+        muted
+        position="0 0 0"
       ></a-video>
     </a-nft>
 
