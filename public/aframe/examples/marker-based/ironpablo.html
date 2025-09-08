@@ -1,114 +1,129 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Reconocimiento de mural</title>
-  <style>
-    #videoMural {
-      display: none; /* Oculto por defecto */
-      margin: 10px auto;
-    }
-    #video, #resultado {
-      display: block;
-      margin: 10px auto;
-    }
-    #canvas {
-      display: none; /* oculto, solo lo usamos para procesar */
-    }
-  </style>
+<meta charset="UTF-8">
+<title>AR Mural con Modelo Personalizado</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  #videoCam {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 0;
+  }
+  #videoMural {
+    position: absolute;
+    display: none;
+    z-index: 1;
+    pointer-events: none;
+  }
+  #canvas {
+    display: none;
+  }
+</style>
 </head>
 <body>
-  <h1>Detector de mural con TensorFlow.js</h1>
 
-  <!-- Cámara -->
-  <video id="video" autoplay playsinline width="320" height="240"></video>
-  <canvas id="canvas" width="224" height="224"></canvas> <!-- Tamaño ajustado -->
+<video id="videoCam" autoplay playsinline></video>
+<video id="videoMural" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" autoplay loop muted></video>
+<canvas id="canvas" width="224" height="224"></canvas>
 
-  <!-- Video a mostrar SOLO si se detecta mural -->
-  <video id="videoMural" width="320" height="240" controls>
-    <source src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" type="video/mp4">
-    Tu navegador no soporta video.
-  </video>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 
-  <div id="resultado"></div>
+<script>
+let model, metadata;
 
-  <!-- TensorFlow.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script>
-    let model, metadata;
+async function init() {
+  // 1️⃣ Cargar tu modelo personalizado
+  model = await tf.loadLayersModel("https://sistemas.siasaf.gob.mx/aframe/examples/assets/model.json");
+  const response = await fetch("https://sistemas.siasaf.gob.mx/aframe/examples/assets/metadata.json");
+  metadata = await response.json();
+  console.log("Modelo y metadata cargados");
 
-    async function init() {
-      // Cargar modelo (ajusta la ruta según dónde lo pongas)
-      model = await tf.loadLayersModel("https://sistemas.siasaf.gob.mx/aframe/examples/assets/model.json");
+  // 2️⃣ Configurar cámara
+  const videoCam = document.getElementById("videoCam");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    videoCam.srcObject = stream;
+  } catch (err) {
+    alert("No se pudo acceder a la cámara: " + err);
+    return;
+  }
 
-      // Cargar metadata (etiquetas de clases)
-      const response = await fetch("https://sistemas.siasaf.gob.mx/aframe/examples/assets/metadata.json");
-      metadata = await response.json();
+  videoCam.addEventListener("loadeddata", predictLoop);
+}
 
-      console.log("Modelo y metadata cargados");
+async function predictLoop() {
+  const videoCam = document.getElementById("videoCam");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const videoMural = document.getElementById("videoMural");
 
-      // Configurar cámara
-      const video = document.getElementById("video");
-      try {
-        // Intentar abrir cámara trasera
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } }
-        });
-        video.srcObject = stream;
-      } catch (err) {
-        console.warn("No se pudo abrir la cámara trasera, usando la predeterminada:", err);
-        // Fallback: abrir la cámara disponible
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
+  async function loop() {
+    const videoWidth = videoCam.videoWidth;
+    const videoHeight = videoCam.videoHeight;
+
+    // Dividir la cámara en secciones (por ejemplo 3x3)
+    const sections = [];
+    const rows = 3;
+    const cols = 3;
+    const sectionW = videoWidth / cols;
+    const sectionH = videoHeight / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        sections.push({ x: c * sectionW, y: r * sectionH, w: sectionW, h: sectionH });
       }
-
-      video.addEventListener("loadeddata", predictLoop);
     }
 
-    async function predictLoop() {
-      const video = document.getElementById("video");
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
-      const resultadoDiv = document.getElementById("resultado");
-      const videoMural = document.getElementById("videoMural");
+    let detectedBox = null;
 
-      async function loop() {
-        // Dibujar frame en canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    for (let sec of sections) {
+      ctx.drawImage(videoCam, sec.x, sec.y, sec.w, sec.h, 0, 0, canvas.width, canvas.height);
+      let tensor = tf.browser.fromPixels(canvas).toFloat().div(255.0).expandDims(0);
+      let prediction = await model.predict(tensor).data();
+      let maxIndex = prediction.indexOf(Math.max(...prediction));
+      let label = metadata.labels[maxIndex];
+      let score = prediction[maxIndex];
 
-        // Convertir frame a tensor y normalizar (0-1)
-        let tensor = tf.browser.fromPixels(canvas)
-          .toFloat()
-          .div(255.0)
-          .expandDims(0);
-
-        // Predecir
-        let prediction = await model.predict(tensor).data();
-
-        // Buscar la clase con mayor probabilidad
-        let maxIndex = prediction.indexOf(Math.max(...prediction));
-        let label = metadata.labels[maxIndex];
-        let score = prediction[maxIndex];
-
-        // Mostrar resultado
-        resultadoDiv.innerHTML = `Clase: ${label} <br> Confianza: ${(score * 100).toFixed(2)}%`;
-
-        // Si detecta mural con alta confianza → mostrar video
-        if (label === "mural" && score > 0.8) {
-          videoMural.style.display = "block";
-          if (videoMural.paused) videoMural.play();
-        } else {
-          if (!videoMural.paused) videoMural.pause();
-          videoMural.style.display = "none";
-        }
-
-        requestAnimationFrame(loop);
+      if (label === "mural" && score > 0.8) {
+        // Guardar la sección donde detectamos mural
+        detectedBox = sec;
+        break; // usamos la primera sección detectada
       }
-
-      loop();
     }
 
-    init();
-  </script>
+    if (detectedBox) {
+      // Ajustar videoMural sobre la sección detectada
+      const scaleX = videoCam.clientWidth / videoCam.videoWidth;
+      const scaleY = videoCam.clientHeight / videoCam.videoHeight;
+
+      videoMural.style.left = detectedBox.x * scaleX + "px";
+      videoMural.style.top = detectedBox.y * scaleY + "px";
+      videoMural.style.width = detectedBox.w * scaleX + "px";
+      videoMural.style.height = detectedBox.h * scaleY + "px";
+      videoMural.style.display = "block";
+
+      if (videoMural.paused) videoMural.play();
+    } else {
+      videoMural.style.display = "none";
+      videoMural.pause();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+}
+
+init();
+</script>
 </body>
 </html>
