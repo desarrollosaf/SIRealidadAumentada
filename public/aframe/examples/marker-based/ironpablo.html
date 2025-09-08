@@ -1,83 +1,81 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>WebAR con Video</title>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.2/three.js/build/ar-threex.js"></script>
+  <meta charset="UTF-8">
+  <title>Reconocimiento de mural</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    canvas, video { position: absolute; top: 0; left: 0; }
+    #videoMural {
+      display: none; /* Oculto por defecto */
+      margin: 10px auto;
+    }
+    #video, #resultado {
+      display: block;
+      margin: 10px auto;
+    }
   </style>
 </head>
 <body>
-  <script src="main.js">
-    // Crear escena, cámara y renderizador
-const scene = new THREE.Scene();
-const camera = new THREE.Camera();
-scene.add(camera);
+  <h1>Detector de mural con MediaPipe</h1>
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+  <!-- Cámara -->
+  <video id="video" autoplay playsinline width="320" height="240"></video>
 
-// Configurar fuente de AR
-const arSource = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
-arSource.init(() => setTimeout(() => onResize(), 2000));
+  <!-- Video a mostrar SOLO si se detecta mural -->
+  <video id="videoMural" width="320" height="240" controls>
+    <source src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" type="video/mp4">
+    Tu navegador no soporta video.
+  </video>
 
-window.addEventListener('resize', () => onResize());
-function onResize() {
-  arSource.onResizeElement();
-  arSource.copyElementSizeTo(renderer.domElement);
-  if (arContext.arController) {
-    arSource.copyElementSizeTo(arContext.arController.canvas);
-  }
-}
+  <div id="resultado"></div>
 
-// Configurar contexto AR
-const arContext = new THREEx.ArToolkitContext({
-  cameraParametersUrl: 'https://cdn.jsdelivr.net/npm/ar.js@3.4.2/data/data/camera_para.dat',
-  detectionMode: 'mono'
-});
-arContext.init(() => camera.projectionMatrix.copy(arContext.getProjectionMatrix()));
+  <script type="module">
+    import { ImageClassifier } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
 
-// Crear marcador personalizado
-const markerRoot = new THREE.Group();
-scene.add(markerRoot);
+    async function init() {
+      // Cargar modelo TFLite
+      const classifier = await ImageClassifier.createFromOptions({
+        baseOptions: {
+          modelAssetPath: "https://sistemas.siasaf.gob.mx/aframe/examples/assets/model_unquant.tflite"
+        }
+      });
 
-const markerControls = new THREEx.ArMarkerControls(arContext, markerRoot, {
-  type: 'pattern',
-  patternUrl: 'https://sistemas.siasaf.gob.mx/aframe/examples/assets/pablo1.patt'
-});
+      // Configurar cámara
+      const video = document.getElementById("video");
+      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+        video.srcObject = stream;
+      });
 
-// Crear video como textura
-const video = document.createElement('video');
-video.src = 'https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4';
-video.crossOrigin = 'anonymous';
-video.loop = true;
-video.muted = true;
-video.playsInline = true;
-video.autoplay = true;
-video.setAttribute('webkit-playsinline', 'true');
-video.play();
+      const videoMural = document.getElementById("videoMural");
+      const resultadoDiv = document.getElementById("resultado");
 
-const videoTexture = new THREE.VideoTexture(video);
-const material = new THREE.MeshBasicMaterial({ map: videoTexture, side: THREE.DoubleSide });
-const geometry = new THREE.PlaneGeometry(1, 0.56);
-const mesh = new THREE.Mesh(geometry, material);
-mesh.position.set(0, 0, 0);
-markerRoot.add(mesh);
+      video.addEventListener("loadeddata", async () => {
+        async function loop() {
+          const result = await classifier.classify(video);
 
-// Loop de renderizado
-function animate() {
-  requestAnimationFrame(animate);
-  if (arSource.ready) arContext.update(arSource.domElement);
-  renderer.render(scene, camera);
-}
-animate();
+          if (result.classifications.length > 0) {
+            const top = result.classifications[0].categories[0];
 
+            // Mostrar predicción en texto
+            resultadoDiv.innerHTML = `Clase: ${top.categoryName} <br> Confianza: ${(top.score * 100).toFixed(2)}%`;
 
+            if (top.categoryName === "mural" && top.score > 0.8) {
+              // Si detecta mural -> mostrar y reproducir video
+              videoMural.style.display = "block";
+              if (videoMural.paused) videoMural.play();
+            } else {
+              // Si no detecta mural -> ocultar y pausar video
+              if (!videoMural.paused) videoMural.pause();
+              videoMural.style.display = "none";
+            }
+          }
 
+          requestAnimationFrame(loop);
+        }
+        loop();
+      });
+    }
+
+    init();
   </script>
 </body>
 </html>
