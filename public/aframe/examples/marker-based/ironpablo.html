@@ -12,6 +12,9 @@
       display: block;
       margin: 10px auto;
     }
+    #canvas {
+      display: none; /* oculto, solo lo usamos para procesar */
+    }
   </style>
 </head>
 <body>
@@ -19,6 +22,7 @@
 
   <!-- Cámara -->
   <video id="video" autoplay playsinline width="320" height="240"></video>
+  <canvas id="canvas" width="320" height="240"></canvas>
 
   <!-- Video a mostrar SOLO si se detecta mural -->
   <video id="videoMural" width="320" height="240" controls>
@@ -29,11 +33,16 @@
   <div id="resultado"></div>
 
   <script type="module">
-    import { ImageClassifier } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
+    import { ImageClassifier, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
 
     async function init() {
-      // Cargar modelo TFLite
-      const classifier = await ImageClassifier.createFromOptions({
+      // Resolver los archivos necesarios
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
+
+      // Cargar el clasificador con tu modelo
+      const classifier = await ImageClassifier.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: "https://sistemas.siasaf.gob.mx/aframe/examples/assets/model_unquant.tflite"
         }
@@ -41,6 +50,8 @@
 
       // Configurar cámara
       const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
       navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
         video.srcObject = stream;
       });
@@ -50,20 +61,22 @@
 
       video.addEventListener("loadeddata", async () => {
         async function loop() {
-          const result = await classifier.classify(video);
+          // Dibujar frame en canvas
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // Clasificar el frame actual
+          const result = await classifier.classify(canvas);
 
           if (result.classifications.length > 0) {
             const top = result.classifications[0].categories[0];
 
-            // Mostrar predicción en texto
+            // Mostrar predicción
             resultadoDiv.innerHTML = `Clase: ${top.categoryName} <br> Confianza: ${(top.score * 100).toFixed(2)}%`;
 
             if (top.categoryName === "mural" && top.score > 0.8) {
-              // Si detecta mural -> mostrar y reproducir video
               videoMural.style.display = "block";
               if (videoMural.paused) videoMural.play();
             } else {
-              // Si no detecta mural -> ocultar y pausar video
               if (!videoMural.paused) videoMural.pause();
               videoMural.style.display = "none";
             }
