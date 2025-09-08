@@ -97,7 +97,9 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 </html>
 
 -->
-<html>
+
+<!DOCTYPE html>
+<html lang="es">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
@@ -105,37 +107,34 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
 
     <script>
-      // Componente para controlar los videos cuando el marcador es detectado
       AFRAME.registerComponent("video-handler", {
         schema: { target: { type: "selector" } },
         init: function () {
           const video = this.data.target;
 
-          // Función para desbloquear el video en dispositivos móviles
+          // Desbloquear video al tocar la pantalla
           const unlock = () => {
             video.play().then(() => {
-              video.pause();
+              video.pause(); // Pausa al principio para evitar el autoplay sin permiso
             }).catch(e => console.log("Error al desbloquear video:", e));
             window.removeEventListener("touchstart", unlock);
           };
-
           window.addEventListener("touchstart", unlock, { once: true });
 
-          // Cuando se detecta el marcador (targetFound), se reproduce el video
           this.el.addEventListener("targetFound", () => {
             video.play();
+            // Congelar la transformación cuando la imagen es detectada
             this.el.setAttribute('lock-transform', 'enabled', true);
           });
-
-          // Cuando se pierde el marcador (targetLost), se pausa el video
           this.el.addEventListener("targetLost", () => {
             video.pause();
+            // Descongelar la transformación cuando la imagen se pierde
             this.el.setAttribute('lock-transform', 'enabled', false);
           });
         }
       });
 
-      // Componente para "congelar" la posición y rotación de los objetos
+      // Componente para congelar la posición y rotación cuando está activo
       AFRAME.registerComponent('lock-transform', {
         schema: { enabled: { type: 'boolean', default: false } },
         init: function () {
@@ -154,7 +153,6 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
         tick: function () {
           if (this.isLocked) {
             const obj = this.el.object3D;
-            // Reaplicamos la posición y rotación congelada
             obj.position.copy(this.frozenPos);
             obj.quaternion.copy(this.frozenQuat);
           }
@@ -165,37 +163,27 @@ https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/examples/image-tracking/asse
 
   <body>
     <a-scene
-      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.001; filterBeta: 15;"
+      mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/targetsIC.mind; filterMinCF: 0.01; filterBeta: 20;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
     >
-      <!-- Definir los videos en los assets -->
       <a-assets>
         <video id="video1" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
-        <video id="video2" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/izquierda.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
-        <video id="video3" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/derecha.mp4" loop muted playsinline preload="auto" crossorigin="anonymous"></video>
       </a-assets>
 
-      <!-- Cámara -->
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Definir los targets de imagen -->
+      <!-- Image Target -->
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane material="shader: flat; src: #video2" width="2.1" height="3.1" lock-transform></a-plane>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 1" video-handler="target: #video1">
+        <!-- Aquí asignamos el video al marcador con el componente lock-transform -->
         <a-plane material="shader: flat; src: #video1" width="2.1" height="3.1" lock-transform></a-plane>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 2" video-handler="target: #video3">
-        <a-plane material="shader: flat; src: #video3" width="2.1" height="3.1" lock-transform></a-plane>
       </a-entity>
     </a-scene>
   </body>
 </html>
+
 
 
 
