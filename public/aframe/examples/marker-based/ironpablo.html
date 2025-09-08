@@ -49,9 +49,18 @@
 
       // Configurar cámara
       const video = document.getElementById("video");
-      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      try {
+        // Intentar abrir cámara trasera
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } }
+        });
         video.srcObject = stream;
-      });
+      } catch (err) {
+        console.warn("No se pudo abrir la cámara trasera, usando la predeterminada:", err);
+        // Fallback: abrir la cámara disponible
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      }
 
       video.addEventListener("loadeddata", predictLoop);
     }
@@ -67,9 +76,10 @@
         // Dibujar frame en canvas
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Convertir frame a tensor
+        // Convertir frame a tensor y normalizar (0-1)
         let tensor = tf.browser.fromPixels(canvas)
           .toFloat()
+          .div(255.0)
           .expandDims(0);
 
         // Predecir
