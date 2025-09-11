@@ -1,81 +1,129 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Reconocimiento de mural</title>
-  <style>
-    #videoMural {
-      display: none; /* Oculto por defecto */
-      margin: 10px auto;
-    }
-    #video, #resultado {
-      display: block;
-      margin: 10px auto;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>AR Mural con Modelo Personalizado</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  #videoCam {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 0;
+  }
+  #videoMural {
+    position: absolute;
+    display: none;
+    z-index: 1;
+    pointer-events: none;
+  }
+  #canvas {
+    display: none;
+  }
+</style>
 </head>
 <body>
-  <h1>Detector de mural con MediaPipe</h1>
 
-  <!-- Cámara -->
-  <video id="video" autoplay playsinline width="320" height="240"></video>
+<video id="videoCam" autoplay playsinline></video>
+<video id="videoMural" src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" autoplay loop muted></video>
+<canvas id="canvas" width="224" height="224"></canvas>
 
-  <!-- Video a mostrar SOLO si se detecta mural -->
-  <video id="videoMural" width="320" height="240" controls>
-    <source src="https://sistemas.siasaf.gob.mx/aframe/examples/assets/centro.mp4" type="video/mp4">
-    Tu navegador no soporta video.
-  </video>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 
-  <div id="resultado"></div>
+<script>
+let model, metadata;
 
-  <script type="module">
-    import { ImageClassifier } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
+async function init() {
+  // 1️⃣ Cargar tu modelo personalizado
+  model = await tf.loadLayersModel("https://sistemas.siasaf.gob.mx/aframe/examples/assets/model.json");
+  const response = await fetch("https://sistemas.siasaf.gob.mx/aframe/examples/assets/metadata.json");
+  metadata = await response.json();
+  console.log("Modelo y metadata cargados");
 
-    async function init() {
-      // Cargar modelo TFLite
-      const classifier = await ImageClassifier.createFromOptions({
-        baseOptions: {
-          modelAssetPath: "https://sistemas.siasaf.gob.mx/aframe/examples/assets/model_unquant.tflite"
-        }
-      });
+  // 2️⃣ Configurar cámara
+  const videoCam = document.getElementById("videoCam");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    videoCam.srcObject = stream;
+  } catch (err) {
+    alert("No se pudo acceder a la cámara: " + err);
+    return;
+  }
 
-      // Configurar cámara
-      const video = document.getElementById("video");
-      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-        video.srcObject = stream;
-      });
+  videoCam.addEventListener("loadeddata", predictLoop);
+}
 
-      const videoMural = document.getElementById("videoMural");
-      const resultadoDiv = document.getElementById("resultado");
+async function predictLoop() {
+  const videoCam = document.getElementById("videoCam");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const videoMural = document.getElementById("videoMural");
 
-      video.addEventListener("loadeddata", async () => {
-        async function loop() {
-          const result = await classifier.classify(video);
+  async function loop() {
+    const videoWidth = videoCam.videoWidth;
+    const videoHeight = videoCam.videoHeight;
 
-          if (result.classifications.length > 0) {
-            const top = result.classifications[0].categories[0];
+    // Dividir la cámara en secciones (por ejemplo 3x3)
+    const sections = [];
+    const rows = 3;
+    const cols = 3;
+    const sectionW = videoWidth / cols;
+    const sectionH = videoHeight / rows;
 
-            // Mostrar predicción en texto
-            resultadoDiv.innerHTML = `Clase: ${top.categoryName} <br> Confianza: ${(top.score * 100).toFixed(2)}%`;
-
-            if (top.categoryName === "mural" && top.score > 0.8) {
-              // Si detecta mural -> mostrar y reproducir video
-              videoMural.style.display = "block";
-              if (videoMural.paused) videoMural.play();
-            } else {
-              // Si no detecta mural -> ocultar y pausar video
-              if (!videoMural.paused) videoMural.pause();
-              videoMural.style.display = "none";
-            }
-          }
-
-          requestAnimationFrame(loop);
-        }
-        loop();
-      });
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        sections.push({ x: c * sectionW, y: r * sectionH, w: sectionW, h: sectionH });
+      }
     }
 
-    init();
-  </script>
+    let detectedBox = null;
+
+    for (let sec of sections) {
+      ctx.drawImage(videoCam, sec.x, sec.y, sec.w, sec.h, 0, 0, canvas.width, canvas.height);
+      let tensor = tf.browser.fromPixels(canvas).toFloat().div(255.0).expandDims(0);
+      let prediction = await model.predict(tensor).data();
+      let maxIndex = prediction.indexOf(Math.max(...prediction));
+      let label = metadata.labels[maxIndex];
+      let score = prediction[maxIndex];
+
+      if (label === "mural" && score > 0.8) {
+        // Guardar la sección donde detectamos mural
+        detectedBox = sec;
+        break; // usamos la primera sección detectada
+      }
+    }
+
+    if (detectedBox) {
+      // Ajustar videoMural sobre la sección detectada
+      const scaleX = videoCam.clientWidth / videoCam.videoWidth;
+      const scaleY = videoCam.clientHeight / videoCam.videoHeight;
+
+      videoMural.style.left = detectedBox.x * scaleX + "px";
+      videoMural.style.top = detectedBox.y * scaleY + "px";
+      videoMural.style.width = detectedBox.w * scaleX + "px";
+      videoMural.style.height = detectedBox.h * scaleY + "px";
+      videoMural.style.display = "block";
+
+      if (videoMural.paused) videoMural.play();
+    } else {
+      videoMural.style.display = "none";
+      videoMural.pause();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+}
+
+init();
+</script>
 </body>
 </html>
