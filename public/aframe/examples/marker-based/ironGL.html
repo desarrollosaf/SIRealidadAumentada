@@ -88,7 +88,7 @@ animation="property: position; to: 0 0.1 0.1; dur: 1000; easing: easeInOutQuad; 
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
-    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/referenciaDos.mind;" 
+    <a-scene mindar-image="imageTargetSrc: https://sistemas.siasaf.gob.mx/aframe/examples/assets/referenciaDos.mind; filterMinCF:0.0001; filterBeta:0.001"
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" 
@@ -96,7 +96,7 @@ animation="property: position; to: 0 0.1 0.1; dur: 1000; easing: easeInOutQuad; 
       
       <a-assets>
         <a-asset-item id="avatarModel" src="https://sistemas.siasaf.gob.mx/aframe/examples/image-tracking/nft/CONGRESO2.glb"></a-asset-item>
-        <img id="gifTex" src="https://sistemas.siasaf.gob.mx/aframe/examples/image-tracking/nft/PruebaMuralEscaleraSur.gif">
+        <audio id="audio1" src="https://cdn.aframe.io/basic-guide/audio/backgroundnoise.wav"></audio>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -113,15 +113,18 @@ animation="property: position; to: 0 0.1 0.1; dur: 1000; easing: easeInOutQuad; 
           src="#avatarModel"
           animation-mixer>
         </a-gltf-model>
+        <a-entity sound="src: #audio1; autoplay: true; loop: true; positional: false"></a-entity>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1">
-        <a-plane 
-          src="#gifTex" 
-          position="0 0 0" 
-          width="1.2" 
-          height="0.8">
-        </a-plane>
+        <a-gltf-model 
+          rotation="0 0 0" 
+          position="0 -0.6 0.1" 
+          scale="1 1 1" 
+          src="#avatarModel"
+          animation-mixer>
+        </a-gltf-model>
+        <a-entity sound="src: #audio1; autoplay: true; loop: true; positional: false"></a-entity>
       </a-entity>
 
     </a-scene>
